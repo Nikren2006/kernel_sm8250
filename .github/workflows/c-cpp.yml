@@ -37,25 +37,30 @@ jobs:
       run: |
         export ARCH=arm64
         export CLANG_TRIPLE=aarch64-linux-gnu-
+        export CROSS_COMPILE=aarch64-linux-gnu-
         
         make vendor/apollo_defconfig
         
-        # Отключаем camera-cas (не нужна для загрузки HyperOS)
+        # Отключаем camera-cas
         scripts/config --disable CONFIG_SPECTRA_CAMERA
         make olddefconfig
         
+        # Собираем: CC для ядра = Clang, HOSTCC для host-утилит = системный GCC
         make -j$(nproc) \
-            CC=/opt/aosp-clang/bin/clang \
-            LD=/opt/aosp-clang/bin/ld.lld \
-            AR=/opt/aosp-clang/bin/llvm-ar \
-            NM=/opt/aosp-clang/bin/llvm-nm \
-            STRIP=/opt/aosp-clang/bin/llvm-strip \
-            OBJCOPY=/opt/aosp-clang/bin/llvm-objcopy \
-            OBJDUMP=/opt/aosp-clang/bin/llvm-objdump \
-            READELF=/opt/aosp-clang/bin/llvm-readelf \
+            CC=clang \
+            LD=ld.lld \
+            AR=llvm-ar \
+            NM=llvm-nm \
+            STRIP=llvm-strip \
+            OBJCOPY=llvm-objcopy \
+            OBJDUMP=llvm-objdump \
+            READELF=llvm-readelf \
             HOSTCC=gcc \
             HOSTCXX=g++ \
-            HOSTLD=ld
+            HOSTLD=ld \
+            AS=/opt/aosp-clang/bin/llvm-as \
+            CC_IS_CLANG=true \
+            CLANG_VERSION=18
 
     - name: Upload kernel image
       uses: actions/upload-artifact@v4
