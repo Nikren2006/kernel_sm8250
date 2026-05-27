@@ -23,10 +23,8 @@ jobs:
           bison \
           libssl-dev \
           bc \
-          wget \
-          unzip \
-          git \
-          gcc-aarch64-linux-gnu
+          gcc-aarch64-linux-gnu \
+          git
 
     - name: Download Proton Clang
       run: |
@@ -35,23 +33,25 @@ jobs:
     - name: Build kernel
       run: |
         export ARCH=arm64
-        export PATH="/opt/proton-clang/bin:$PATH"
-        # CROSS_COMPILE указываем СИСТЕМНЫЙ aarch64-linux-gnu- (он есть в gcc-aarch64-linux-gnu)
+        # НЕ добавляем Proton Clang в общий PATH, чтобы его ld не переопределил системный
         export CROSS_COMPILE=aarch64-linux-gnu-
         export CLANG_TRIPLE=aarch64-linux-gnu-
         
         make vendor/apollo_defconfig
         
-        # Собираем: CC=clang использует Proton Clang, а host-утилиты собираются системным GCC
+        # Явно указываем полные пути ТОЛЬКО для кросс-компиляции ядра
         make -j$(nproc) \
-            CC=clang \
-            LD=ld.lld \
-            AR=llvm-ar \
-            NM=llvm-nm \
-            STRIP=llvm-strip \
-            OBJCOPY=llvm-objcopy \
-            OBJDUMP=llvm-objdump \
-            READELF=llvm-readelf
+            CC=/opt/proton-clang/bin/clang \
+            LD=/opt/proton-clang/bin/ld.lld \
+            AR=/opt/proton-clang/bin/llvm-ar \
+            NM=/opt/proton-clang/bin/llvm-nm \
+            STRIP=/opt/proton-clang/bin/llvm-strip \
+            OBJCOPY=/opt/proton-clang/bin/llvm-objcopy \
+            OBJDUMP=/opt/proton-clang/bin/llvm-objdump \
+            READELF=/opt/proton-clang/bin/llvm-readelf \
+            HOSTCC=gcc \
+            HOSTCXX=g++ \
+            HOSTLD=ld
 
     - name: Upload kernel image
       uses: actions/upload-artifact@v4
