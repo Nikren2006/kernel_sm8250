@@ -50,7 +50,10 @@ jobs:
         
         make vendor/apollo_defconfig
         
+        # Отключаем ВСЕ проблемные techpack-подсистемы разом
         scripts/config --disable CONFIG_SPECTRA_CAMERA
+        scripts/config --disable CONFIG_DRM_MSM
+        scripts/config --disable CONFIG_MSM_VIDC
         make olddefconfig
         
         make -j$(nproc) \
