@@ -27,7 +27,15 @@ jobs:
           git \
           wget
 
-    - name: Download AOSP Clang for Android 16
+    - name: Cache AOSP Clang
+      id: cache-clang
+      uses: actions/cache@v4
+      with:
+        path: /opt/aosp-clang
+        key: aosp-clang-r547379-v1
+
+    - name: Download AOSP Clang
+      if: steps.cache-clang.outputs.cache-hit != 'true'
       run: |
         wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz
         mkdir -p /opt/aosp-clang
@@ -38,12 +46,10 @@ jobs:
         export ARCH=arm64
         export CLANG_TRIPLE=aarch64-linux-gnu-
         export CROSS_COMPILE=aarch64-linux-gnu-
-        # Добавляем Clang в PATH, чтобы ld.lld был найден
         export PATH="/opt/aosp-clang/bin:$PATH"
         
         make vendor/apollo_defconfig
         
-        # Отключаем camera-cas
         scripts/config --disable CONFIG_SPECTRA_CAMERA
         make olddefconfig
         
@@ -59,7 +65,7 @@ jobs:
             HOSTCC=gcc \
             HOSTCXX=g++ \
             HOSTLD=ld \
-            KCFLAGS="-Wno-error -mllvm -regalloc-enable-advisor=release" \
+            KCFLAGS="-Wno-error" \
             KAFLAGS="-Wno-error"
 
     - name: Upload kernel image
