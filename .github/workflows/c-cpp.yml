@@ -30,7 +30,6 @@ jobs:
       run: |
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-gnu-
-        # Замени vendor/apollo_defconfig на свой defconfig
         make vendor/apollo_defconfig
         make -j$(nproc)
 
