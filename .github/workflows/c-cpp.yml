@@ -1,9 +1,7 @@
-name: Build Kernel
+name: Build FakeDreamer Kernel
 
 on:
   push:
-    branches: [ stable ]
-  pull_request:
     branches: [ stable ]
   workflow_dispatch:
 
@@ -15,29 +13,49 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y \
-          gcc-aarch64-linux-gnu \
-          flex \
-          bison \
-          libssl-dev
+        sudo apt-get install -y flex bison libssl-dev bc wget unzip
+
+    - name: Download AOSP Clang
+      run: |
+        wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r510928.tar.gz
+        mkdir -p clang
+        tar -xzf clang-r510928.tar.gz -C clang/
+        
+        git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 gcc-arm64
 
     - name: Build kernel
       run: |
         export ARCH=arm64
-        export CROSS_COMPILE=aarch64-linux-gnu-
+        export CLANG_PATH=$(pwd)/clang/bin
+        export PATH="$CLANG_PATH:$PATH"
+        export CROSS_COMPILE=$(pwd)/gcc-arm64/bin/aarch64-linux-android-
+        export CLANG_TRIPLE=aarch64-linux-gnu-
+        
+        # FakeDreamer обычно использует apollo_defconfig
         make vendor/apollo_defconfig
-        make -j$(nproc)
+        
+        # Сборка с Clang — стандарт для Android-ядер
+        make -j$(nproc) \
+            CC=clang \
+            LD=ld.lld \
+            AR=llvm-ar \
+            NM=llvm-nm \
+            STRIP=llvm-strip \
+            OBJCOPY=llvm-objcopy \
+            OBJDUMP=llvm-objdump \
+            READELF=llvm-readelf
 
     - name: Upload kernel image
       uses: actions/upload-artifact@v4
       with:
-        name: kernel-image
+        name: FakeDreamer-kernel
         path: |
           arch/arm64/boot/Image
           arch/arm64/boot/Image.gz
           arch/arm64/boot/Image.gz-dtb
+          arch/arm64/boot/dtbo.img
