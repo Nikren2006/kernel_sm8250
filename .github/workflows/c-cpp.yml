@@ -38,6 +38,8 @@ jobs:
         export ARCH=arm64
         export CLANG_TRIPLE=aarch64-linux-gnu-
         export CROSS_COMPILE=aarch64-linux-gnu-
+        # Добавляем Clang в PATH, чтобы ld.lld был найден
+        export PATH="/opt/aosp-clang/bin:$PATH"
         
         make vendor/apollo_defconfig
         
@@ -45,7 +47,6 @@ jobs:
         scripts/config --disable CONFIG_SPECTRA_CAMERA
         make olddefconfig
         
-        # Собираем: CC для ядра = Clang, HOSTCC для host-утилит = системный GCC
         make -j$(nproc) \
             CC=clang \
             LD=ld.lld \
@@ -58,9 +59,8 @@ jobs:
             HOSTCC=gcc \
             HOSTCXX=g++ \
             HOSTLD=ld \
-            AS=/opt/aosp-clang/bin/llvm-as \
-            CC_IS_CLANG=true \
-            CLANG_VERSION=18
+            KCFLAGS="-Wno-error -mllvm -regalloc-enable-advisor=release" \
+            KAFLAGS="-Wno-error"
 
     - name: Upload kernel image
       uses: actions/upload-artifact@v4
