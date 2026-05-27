@@ -41,6 +41,13 @@ jobs:
         mkdir -p /opt/aosp-clang
         tar -xzf clang-r547379.tar.gz -C /opt/aosp-clang/
 
+    - name: Remove problematic techpack drivers
+      run: |
+        # Удаляем проблемные исходники физически
+        rm -rf techpack/camera-cas
+        rm -rf techpack/display/pll
+        rm -rf techpack/display/rotator
+
     - name: Build kernel
       run: |
         export ARCH=arm64
@@ -50,10 +57,10 @@ jobs:
         
         make vendor/apollo_defconfig
         
-        # Отключаем ВСЕ проблемные techpack-подсистемы разом
+        # Отключаем всё, что можно через Kconfig
         scripts/config --disable CONFIG_SPECTRA_CAMERA
-        scripts/config --disable CONFIG_DRM_MSM
-        scripts/config --disable CONFIG_MSM_VIDC
+        scripts/config --disable CONFIG_DRM_MSM_DSI_PLL_10NM
+        scripts/config --disable CONFIG_DRM_MSM_DSI_PLL_7NM
         make olddefconfig
         
         make -j$(nproc) \
