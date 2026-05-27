@@ -24,31 +24,33 @@ jobs:
           libssl-dev \
           bc \
           gcc-aarch64-linux-gnu \
-          git
+          git \
+          wget
 
-    - name: Download Proton Clang
+    - name: Download AOSP Clang
       run: |
-        git clone --depth=1 https://github.com/kdrag0n/proton-clang.git /opt/proton-clang
+        # Качаем официальный бинарный пакет Clang от Google
+        wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r522817.tar.gz
+        mkdir -p /opt/aosp-clang
+        tar -xzf clang-r522817.tar.gz -C /opt/aosp-clang/
 
     - name: Build kernel
       run: |
         export ARCH=arm64
-        # НЕ добавляем Proton Clang в общий PATH, чтобы его ld не переопределил системный
         export CROSS_COMPILE=aarch64-linux-gnu-
         export CLANG_TRIPLE=aarch64-linux-gnu-
         
         make vendor/apollo_defconfig
         
-        # Явно указываем полные пути ТОЛЬКО для кросс-компиляции ядра
         make -j$(nproc) \
-            CC=/opt/proton-clang/bin/clang \
-            LD=/opt/proton-clang/bin/ld.lld \
-            AR=/opt/proton-clang/bin/llvm-ar \
-            NM=/opt/proton-clang/bin/llvm-nm \
-            STRIP=/opt/proton-clang/bin/llvm-strip \
-            OBJCOPY=/opt/proton-clang/bin/llvm-objcopy \
-            OBJDUMP=/opt/proton-clang/bin/llvm-objdump \
-            READELF=/opt/proton-clang/bin/llvm-readelf \
+            CC=/opt/aosp-clang/bin/clang \
+            LD=/opt/aosp-clang/bin/ld.lld \
+            AR=/opt/aosp-clang/bin/llvm-ar \
+            NM=/opt/aosp-clang/bin/llvm-nm \
+            STRIP=/opt/aosp-clang/bin/llvm-strip \
+            OBJCOPY=/opt/aosp-clang/bin/llvm-objcopy \
+            OBJDUMP=/opt/aosp-clang/bin/llvm-objdump \
+            READELF=/opt/aosp-clang/bin/llvm-readelf \
             HOSTCC=gcc \
             HOSTCXX=g++ \
             HOSTLD=ld
