@@ -29,7 +29,6 @@ jobs:
 
     - name: Download AOSP Clang for Android 16
       run: |
-        # Clang r547379 — официальный для Android 16
         wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz
         mkdir -p /opt/aosp-clang
         tar -xzf clang-r547379.tar.gz -C /opt/aosp-clang/
@@ -37,10 +36,13 @@ jobs:
     - name: Build kernel
       run: |
         export ARCH=arm64
-        export CROSS_COMPILE=aarch64-linux-gnu-
         export CLANG_TRIPLE=aarch64-linux-gnu-
         
         make vendor/apollo_defconfig
+        
+        # Отключаем camera-cas (не нужна для загрузки HyperOS)
+        scripts/config --disable CONFIG_SPECTRA_CAMERA
+        make olddefconfig
         
         make -j$(nproc) \
             CC=/opt/aosp-clang/bin/clang \
