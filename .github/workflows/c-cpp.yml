@@ -18,22 +18,31 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y flex bison libssl-dev bc wget unzip git
+        sudo apt-get install -y \
+          flex \
+          bison \
+          libssl-dev \
+          bc \
+          wget \
+          unzip \
+          git \
+          gcc-aarch64-linux-gnu
 
     - name: Download Proton Clang
       run: |
-        # Proton Clang — стабильный и проверенный toolchain для Android-ядер
         git clone --depth=1 https://github.com/kdrag0n/proton-clang.git /opt/proton-clang
 
     - name: Build kernel
       run: |
         export ARCH=arm64
         export PATH="/opt/proton-clang/bin:$PATH"
+        # CROSS_COMPILE указываем СИСТЕМНЫЙ aarch64-linux-gnu- (он есть в gcc-aarch64-linux-gnu)
         export CROSS_COMPILE=aarch64-linux-gnu-
         export CLANG_TRIPLE=aarch64-linux-gnu-
         
-        make arch/arm64/configs/vendor/apollo_defconfig
+        make vendor/apollo_defconfig
         
+        # Собираем: CC=clang использует Proton Clang, а host-утилиты собираются системным GCC
         make -j$(nproc) \
             CC=clang \
             LD=ld.lld \
